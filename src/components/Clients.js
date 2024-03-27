@@ -1,12 +1,13 @@
 import React from 'react';
-import kws from '../images/clients/kws.png';
-import geps from '../images/clients/geps.png';
-import protergia from '../images/clients/protergia.png';
+import kws from '../images/nic.png';
+import geps from '../images/infosys.png';
+import protergia from '../images/tech.png';
 
 const clientImage = {
     height: '10rem',
     width: 'auto',
     mixBlendMode: 'colorBurn'
+
 }
 
 const Clients = () => {

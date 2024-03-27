@@ -4,6 +4,7 @@ import { HashLink } from 'react-router-hash-link';
 
 
 const NavBar = () => {
+    
     const [top, setTop] = useState(true);
     const [isOpen, setisOpen] = React.useState(false);
     function handleClick() {
@@ -23,8 +24,8 @@ const NavBar = () => {
         <nav className={`fixed top-0 w-full z-30 transition duration-300 ease-in-out mb-16 ${!top && 'bg-white shadow-lg'}`}>
             <div className="flex flex-row justify-between items-center py-2">
                 <div className="flex flex-row justify-center md:px-12 md:mx-12 items-center text-center font-semibold">
-                    <HashLink smooth to="/#hero"><h1 className="font-extrabold text-4xl text-blue-900">mld</h1></HashLink>
-                    
+                <HashLink to="/"><h1 className="font-extrabold text-4xl text-black-900"><span style={{color:'red'}}>Keen</span><strong style={{fontSize:'45px'}}>Able</strong></h1>
+                </HashLink>
                 </div>
                 <div className="group flex flex-col items-center">
                     <button className="p-2 rounded-lg lg:hidden text-blue-900" onClick={handleClick}>
