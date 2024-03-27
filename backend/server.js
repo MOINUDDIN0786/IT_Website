@@ -3,6 +3,12 @@ const mysql = require('mysql');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
+const jwt =require('jsonwebtoken')
+const {check,validationResult}=require('express-validator')
+const bcrypt=require('bcrypt')
+const { v4: uuidv4 } = require('uuid');
+
+const saltRounds = 10; // Number of salt rounds for bcrypt
 
 const app = express();
 const storage = multer.diskStorage({
@@ -306,37 +312,48 @@ function generateHTMLContent(formData) {
   });
   
   // Handle POST request for inserting data into registrationForm table
-  app.post('/registrationform', upload.single('resume'), (req, res) => {
+  app.post('/registrationform', upload.single('resume'), async (req, res) => {
     const { name, email, password } = req.body;
-  
-    // Check if email already exists in the database
-    const checkEmailQuery = 'SELECT COUNT(*) AS count FROM registration WHERE email = ?';
-    db2.query(checkEmailQuery, [email], (err, results) => {
-      if (err) {
-        console.error('Error checking email:', err);
-        return res.status(500).send('Internal server error');
-      }
-  
-      const emailCount = results[0].count;
-  
-      if (emailCount > 0) {
-        // Email already registered
-        return res.status(400).send('Email already registered');
-      } else {
-        // Email is not registered, proceed with registration
-        const insertQuery = 'INSERT INTO registration(name, email, password) VALUES (?, ?, ?)';
-        db2.query(insertQuery, [name, email, password], (err, result) => {
-          if (err) {
-            console.error('Error inserting data into registration table:', err);
-            return res.status(500).send('Error inserting data into registration table');
-          } else {
-            return res.status(200).send('Data inserted into registration table successfully');
-          }
+
+    try {
+        // Generate salt
+        const salt = await bcrypt.genSalt(saltRounds);
+        // Hash the password with the generated salt
+        const hashPassword = await bcrypt.hash(password, salt);
+
+        // Check if email already exists in the database
+        const checkEmailQuery = 'SELECT COUNT(*) AS count FROM registration WHERE email = ?';
+        db2.query(checkEmailQuery, [email], async (err, results) => {
+            if (err) {
+                console.error('Error checking email:', err);
+                return res.status(500).send('Internal server error');
+            }
+
+            const emailCount = results[0].count;
+
+            if (emailCount > 0) {
+                // Email already registered
+                return res.status(400).send('Email already registered');
+            } else {
+                // Email is not registered, proceed with registration
+                const insertQuery = 'INSERT INTO registration(name, email, password) VALUES (?, ?, ?)';
+                // Use the hashed password instead of the plain password
+                db2.query(insertQuery, [name, email, hashPassword], (err, result) => {
+                    if (err) {
+                        console.error('Error inserting data into registration table:', err);
+                        return res.status(500).send('Error inserting data into registration table');
+                    } else {
+                        return res.status(200).send('Data inserted into registration table successfully');
+                    }
+                });
+            }
         });
-      }
-    });
-  });
-  
+    } catch (error) {
+        // Handle error appropriately
+        console.error("Error:", error);
+        res.status(500).send("Error in registration");
+    }
+});
   
 
   const db3 = mysql.createConnection({
@@ -355,27 +372,152 @@ function generateHTMLContent(formData) {
   });
   
   // Handle POST request for inserting data into internDetails table
-  app.post('/login', (req, res) => {
-  
+  app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-  
-    const sql = 'SELECT * FROM registration WHERE email=? AND password=?';
-    db.query(sql, [email, password], (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(500).send('Error querying database');
-      } else {
-        if (result.length > 0) {
-          res.status(200).send('Login successful');
-        } else {
-          res.status(401).send('Invalid email or password');
+
+    try {
+        // Retrieve user data from the database based on the provided email
+        const checkEmailQuery = 'SELECT * FROM registration WHERE email = ?';
+        db.query(checkEmailQuery, [email], async (err, results) => {
+            if (err) {
+                console.error('Error querying database:', err);
+                return res.status(500).send('Error querying database');
+            }
+
+            if (results.length === 0) {
+                // Email not found
+                return res.status(401).send('Invalid email or password');
+            }
+
+            // Email found, now compare passwords
+            const hashedPassword = results[0].password;
+            const passwordMatch = await bcrypt.compare(password, hashedPassword);
+
+            if (passwordMatch) {
+                // Passwords match, login successful
+                return res.status(200).send('Login successful');
+            } else {
+                // Passwords don't match
+                return res.status(401).send('Invalid email or password');
+            }
+        });
+    } catch (error) {
+        // Handle error appropriately
+        console.error("Error:", error);
+        res.status(500).send("Error in login");
+    }
+});
+
+// Password Reset Functionality
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000);
+}
+
+// Function to send OTP via email
+async function sendOTPByEmail(email, otp) {
+  try {
+      let transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+              user: 'moinuddin6495@gmail.com', // Your Gmail address
+              pass: 'rizenepctmibdxuj' // Your Gmail password
+          }
+      });
+
+      let info = await transporter.sendMail({
+          from: 'moinuddin6495@gmail.com',
+          to: email,
+          subject: 'Password Reset OTP',
+          text: `Your OTP for password reset is: ${otp}`
+      });
+
+      console.log("OTP sent: %s", info.messageId);
+  } catch (error) {
+      console.error("Error sending email:", error);
+      throw error;
+  }
+}
+
+app.post('/forgotpassword', async (req, res) => {
+  const { email } = req.body;
+
+  // Generate OTP
+  otp = generateOTP();
+
+  try {
+      
+      const insertOTPSql = 'INSERT INTO password_reset (email, otp, timestamp) VALUES (?, ?, NOW())';
+      db.query(insertOTPSql, [email, otp], async (err, result) => {
+          if (err) {
+              console.error('Error inserting OTP into database:', err);
+              return res.status(500).send('Error generating OTP');
+          }
+
+          // Send OTP via email
+          await sendOTPByEmail(email, otp);
+
+          return res.status(200).send('OTP sent to your email');
+      });
+  } catch (error) {
+      console.error("Error:", error);
+      res.status(500).send("Error in forgot password");
+  }
+});
+
+app.post('/resetpassword', async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  try {
+      // Retrieve the stored OTP and timestamp from the database
+      const getOTPSql = 'SELECT otp, timestamp FROM password_reset WHERE email = ?';
+      db.query(getOTPSql, [email], async (err, results) => {
+          if (err) {
+              console.error('Error retrieving OTP from database:', err);
+              return res.status(500).send('Error resetting password');
+          }
+
+          if (results.length === 0) {
+              // No OTP found for the provided email
+              return res.status(401).send('Invalid OTP or email');
+          }
+
+          const storedOTP = results[0].otp;
+          const timestamp = new Date(results[0].timestamp).getTime();
+          const currentTimestamp = new Date().getTime();
+
+          // Verify OTP and check if it's still valid (e.g., within a certain time limit)
+          if (otp != storedOTP || currentTimestamp - timestamp > 600000) { // OTP expires after 10 minutes
+              return res.status(401).send('Invalid OTP or OTP expired');
+          }
+
+          // Hash the new password
+          const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+          // Update the user's password in the database
+          const updatePasswordSql = 'UPDATE registration SET password = ? WHERE email = ?';
+          db.query(updatePasswordSql, [hashedPassword, email], async (err, result) => {
+              if (err) {
+                  console.error('Error updating password in database:', err);
+                  return res.status(500).send('Error resetting password');
+              }
+
+              // Delete the used OTP from the database
+              const deleteOTPSql = 'DELETE FROM password_reset WHERE email = ?';
+              db.query(deleteOTPSql, [email], (err, result) => {
+                  if (err) {
+                      console.error('Error deleting OTP from database:', err);
                   }
-      }
-    });
-  });
-  
+              });
 
-
+              return res.status(200).send('Password reset successful');
+          });
+      });
+  } catch (error) {
+      console.error("Error:", error);
+      res.status(500).send("Error in reset password");
+  }
+});
 
   // Start server
   const PORT = process.env.PORT || 9000;
