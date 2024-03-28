@@ -63,7 +63,7 @@ app.post('/details',(req, res) => {
      // console.log('MySQL Connected...');
 
       const mailOptions = {
-          from: email,
+          from: 'moinuddin6495@gmail.com',
           to: 'ruby.jain@fosteringlinux.com', 
           subject: 'New User Data', 
           text: message,
@@ -117,7 +117,7 @@ const db = mysql.createConnection({
     const values = [full_name, email, mobileNo, resumePath, education, skills, additionalInformation];
  
   const mailOptions = {
-    from: email,
+    from: 'moinuddin6495@gmail.com',
     to: 'daily_interns_reporting@fosteringlinux.com',
     subject: 'New User Data', 
     text: generateTextContent(req.body),
@@ -212,7 +212,7 @@ function generateHTMLContent(formData) {
   //  }
 
   const mailOptions = {
-    from: email,
+    from: 'moinuddin6495@gmail.com',
     to: 'daily_interns_reporting@fosteringlinux.com',
     subject: 'New User Data',
     text: generateTextContent(req.body),
@@ -375,7 +375,7 @@ function generateHTMLContent(formData) {
   app.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
-    try {
+    try { 
         // Retrieve user data from the database based on the provided email
         const checkEmailQuery = 'SELECT * FROM registration WHERE email = ?';
         db.query(checkEmailQuery, [email], async (err, results) => {
