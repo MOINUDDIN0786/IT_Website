@@ -5,6 +5,7 @@ import { useDocTitle } from '../components/CustomHook';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
 
+const Swal = require('sweetalert2')
 
 const LoginForm1 = () => {
   useDocTitle("KeenAble | Always be Open!");
@@ -17,7 +18,23 @@ const LoginForm1 = () => {
     }
   }, [isLoggedIn,navigate])
   
+  const showSuccessMessage = () => {
+    Swal.fire({
+      title: 'You have successfully logged in',
+      icon: 'success',
+      showConfirmButton: false, // Hide the OK button
+      timer: 2000 // Automatically close after 2 seconds
+    });
+  }
 
+  const showSuccessMessage1 = () => {
+    Swal.fire({
+      title: 'Enter Correct email or Password',
+      icon: 'error',
+      showConfirmButton: false, // Hide the OK button
+      timer: 2000 // Automatically close after 2 seconds
+    });
+  }
   const [values, setValues] = useState({
     email: '',
     password: ''
@@ -35,7 +52,7 @@ const LoginForm1 = () => {
     axios.post('http://localhost:9000/login', values)
     .then(res => {
        
-      alert("You Have Successfully Logged In! Please click Ok to apply !!!");
+     showSuccessMessage();
       localStorage.setItem('isLoggedIn','true');
       setaIsLoggedIn(true);
       console.log(localStorage.getItem(isLoggedIn));
@@ -47,8 +64,8 @@ const LoginForm1 = () => {
     
       .catch(err => {
         if (err.response && err.response.status === 401) {
-          alert('Invalid email or password. Please try again.');
-        } else {
+        showSuccessMessage1()       
+ } else {
           setError('An error occurred. Please try again later.');
         }
       });

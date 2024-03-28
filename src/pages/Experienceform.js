@@ -5,6 +5,8 @@ import axios from "axios";
 import { useLocation} from 'react-router-dom';
 
 import { useNavigate } from 'react-router-dom';
+const Swal = require('sweetalert2')
+
 
 const ApplicationForm = () => {
 
@@ -37,16 +39,25 @@ const ApplicationForm = () => {
     setValues({ ...values, [event.target.name]: event.target.value });
   };
 
+  const showSuccessMessage = () => {
+    Swal.fire({
+      title: 'Your application has been sent!!!',
+      icon: 'success',
+      showConfirmButton: false, // Hide the OK button
+      timer: 2000 // Automatically close after 2 seconds
+    });
+  }
+
   const handleSubmit = event => {
     event.preventDefault();
     axios
       .post('http://localhost:9000/experienceDetails', values)
-      .then(res => alert('Application sent Successfully!!!'))
-      .catch(err => alert('This email id is already Registered'));
+      .then(res => showSuccessMessage())
+      .catch(err => console.log(err));
 
     setTimeout(() => {
       window.location.reload();
-    }, 1000);
+    }, 2000);
   };
 
 

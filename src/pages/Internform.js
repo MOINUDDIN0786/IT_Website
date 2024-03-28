@@ -5,14 +5,21 @@ import { useDocTitle } from '../components/CustomHook';
 import Footer from '../components/Footer';
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+
+const Swal = require('sweetalert2')
+
 const InternForm = () => {
 
   useDocTitle("KeenAble | Always be Open!");
 
   const location = useLocation();
-  const [userName, setUserName] = useState('');
+  
   
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
+
+  const [userName, setUserName] = useState(location.state?.userName || '');
+
  
   const [values,setValues]=useState({
     full_name: '',
@@ -24,36 +31,86 @@ const InternForm = () => {
     additionalInformation: ''
 })
 
+console.log("Experience page loaded,isLoggedin: ",isLoggedIn);
+
 useEffect(() => {
   if (location.state && location.state.userName) {
     setUserName(location.state.userName);
   }
 }, [location.state]);
 
+const showSuccessMessage = () => {
+  Swal.fire({
+    title: 'Your application has been sent!!!',
+    icon: 'success',
+    showConfirmButton: false, // Hide the OK button
+    timer: 2000 // Automatically close after 2 seconds
+  });
+}
 
 const handleChange =(event) => {
   setValues({...values , [event.target.name]:event.target.value})
 }
 
+useEffect(() => {
+  if (!isLoggedIn) {
+    navigate('/login')
+    
+  }
+  }, [isLoggedIn,navigate]);
 
 
   const handleLogout = () => {
-    // Clear user authentication tokens or session data
-    // Redirect the user to the login page
-    // For example:
+    localStorage.removeItem('isLoggedIn'); // Clear login state
+    setIsLoggedIn(true); // Update isLoggedIn state
+
     navigate('/login');
   }
+
+  useEffect(() => {
+    if (location.state?.userName) {
+      setUserName(location.state.userName);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Check if location.state exists and has userName property
+    if (location.state?.userName) {
+      setUserName(location.state.userName);
+    }
+  }, []);
+
   const handleSubmit = (event) => {
     event.preventDefault();
     axios.post('http://localhost:9000/internDetails',values)
-    .then(res=> alert("Application Sent Successfully!!!"))
-    .catch(err => alert(err));
+    .then(res=> showSuccessMessage())
+    .catch(err => console.log(err));
 
     setTimeout(() => {
       window.location.reload();
     }, 1000);
-    
+
+   
   };
+  let isUnmounting = false; // Declare a variable to track unmounting
+
+  useEffect(() => {
+    const handleCleanup = () => {
+      if (!isUnmounting) {
+        navigate('/login');
+        localStorage.removeItem('isLoggedIn');
+        setIsLoggedIn(false);
+       
+      }
+    };
+
+    window.addEventListener('beforeunload', handleCleanup);
+    return () => {
+      isUnmounting = true;
+      window.removeEventListener('beforeunload', handleCleanup);
+    };
+  }, []);
+
 
   return (
     <>

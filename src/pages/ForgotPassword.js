@@ -20,7 +20,7 @@ function ForgotPassword() {
             // Start the timer for 1 minute
             setTimer(setInterval(() => {
                 setCountdown(prevCountdown => prevCountdown - 1);
-            }, 1000)); // Update countdown every second
+            }, 2000)); // Update countdown every second
         } catch (error) {
             console.error('Error sending OTP:', error);
             setMessage('Error sending OTP');
@@ -76,7 +76,7 @@ function ForgotPassword() {
         if (countdown === 0) {
             clearInterval(timer);
             setTimer(null);
-            setCountdown(60); // Reset countdown to 60 seconds
+            setCountdown(120); // Reset countdown to 60 seconds
         }
     }, [countdown, timer]);
 

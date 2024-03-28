@@ -4,17 +4,19 @@ import NavBar from '../components/Navbar/NavBar';
 import { useDocTitle } from '../components/CustomHook';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
+//import Swal from 'sweetalert2'
+const Swal = require('sweetalert2')
 
 const LoginForm = () => {
   useDocTitle("KeenAble | Always be Open!");
   const navigate = useNavigate();
- const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'false');
+ const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
 
   useEffect(() => {
     if (!isLoggedIn) {
-      navigate('/login1'); //  Navigate to login page if not logged in
+      navigate('/login'); //  Navigate to login page if not logged in
     }
-  }, [])
+  }, [isLoggedIn,navigate])
   
 
   const [values, setValues] = useState({
@@ -28,15 +30,33 @@ const LoginForm = () => {
   const handleChange = (event) => {
     setValues({ ...values, [event.target.name]: event.target.value });
   };
+  const showSuccessMessage = () => {
+    Swal.fire({
+      title: 'You have successfully logged in',
+      icon: 'success',
+      showConfirmButton: false, // Hide the OK button
+      timer: 2000 // Automatically close after 2 seconds
+    });
+  }
+
+  const showSuccessMessage1 = () => {
+    Swal.fire({
+      title: 'Enter Correct email or Password',
+      icon: 'error',
+      showConfirmButton: false, // Hide the OK button
+      timer: 2000 // Automatically close after 2 seconds
+    });
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault();
     axios.post('http://localhost:9000/login', values)
     .then(res => {
-       <div id='altt'>
-      alert("You Have Successfully Logged In! Please click Ok to apply !!!");
-      </div>
+       
+      showSuccessMessage();
       localStorage.setItem('isLoggedIn','true');
+      setIsLoggedIn(true);
+      console.log(localStorage.getItem(isLoggedIn));
       navigate('/apply', { state: { userName:values.email } }); // Pass username as state
       
       
@@ -44,7 +64,7 @@ const LoginForm = () => {
     
       .catch(err => {
         if (err.response && err.response.status === 401) {
-          alert('Invalid email or password. Please try again.');
+          showSuccessMessage1()
         } else {
           setError('An error occurred. Please try again later.');
         }

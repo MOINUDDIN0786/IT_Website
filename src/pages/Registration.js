@@ -5,7 +5,7 @@ import { useDocTitle } from '../components/CustomHook';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
 //const [passwordValidationMessage, setPasswordValidationMessage] = useState('');
-
+const Swal = require('sweetalert2')
 const RegistrationForm = () => {
   useDocTitle("KeenAble | Always be Open!");
 
@@ -29,12 +29,37 @@ const RegistrationForm = () => {
       setValues({ ...values, [event.target.name]: event.target.value });
     }
   };
+  const showSuccessMessage = () => {
+    Swal.fire({
+      title: 'You have successfully Registered in',
+      icon: 'success',
+      showConfirmButton: false, // Hide the OK button
+      timer: 2000 // Automatically close after 2 seconds
+    });
+  }
+  const showSuccessMessage1 = () => {
+    Swal.fire({
+      title: 'Enter Correct email or Password',
+      icon: 'error',
+      showConfirmButton: false, // Hide the OK button
+      timer: 2000 // Automatically close after 2 seconds
+    });
+  }
+
+  const showSuccessMessage2 = () => {
+    Swal.fire({
+      title: 'Password and Confirm Password does not match',
+      icon: 'error',
+      showConfirmButton: false, // Hide the OK button
+      timer: 2000 // Automatically close after 2 seconds
+    });
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault();
     // Check if password and confirm password match
     if (values.password !== values.confirmPassword) {
-      alert("Password and Confirm Password do not match");
+    showSuccessMessage2()
       return;
     }
 
@@ -47,14 +72,14 @@ const RegistrationForm = () => {
 
     axios.post('http://localhost:9000/registrationform', values)
       .then(res => {
-        alert("You Have Successfully Registered!!!");
+        showSuccessMessage()
         // if (rememberMe) {
         //   // Remember the password logic
         //   // You can store the password in localStorage or cookies here
         // }
         navigate('/login');
       })
-      .catch(err => alert("Email already registered!!!!"));
+      .catch(err => showSuccessMessage1());
   };
 
   const togglePasswordVisibility = () => {
